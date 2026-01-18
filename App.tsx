@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Side, DrawPoint, DebateSession, ChannelMessage } from './types';
 import Toolbar from './components/Toolbar';
@@ -48,6 +47,32 @@ const App: React.FC = () => {
     };
   }, []);
 
+  // Responsive Canvas Resize logic
+  useEffect(() => {
+    const handleResize = () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      const tempCanvas = document.createElement('canvas');
+      const tempCtx = tempCanvas.getContext('2d');
+      tempCanvas.width = canvas.width;
+      tempCanvas.height = canvas.height;
+      if (tempCtx) tempCtx.drawImage(canvas, 0, 0);
+
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(tempCanvas, 0, 0, canvas.width, canvas.height);
+        drawGrid(ctx, canvas.width, canvas.height);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const drawOnCanvas = useCallback((point: DrawPoint, isLocal: boolean) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -77,7 +102,6 @@ const App: React.FC = () => {
     isDrawing.current = true;
     const pos = getPos(e);
     
-    // Constraint: Can only draw on your side
     if (side === 'LEFT' && pos.x > window.innerWidth / 2) return;
     if (side === 'RIGHT' && pos.x < window.innerWidth / 2) return;
 
@@ -96,7 +120,6 @@ const App: React.FC = () => {
     if (!isDrawing.current || !side) return;
     const pos = getPos(e);
 
-    // Hard boundary constraint
     if (side === 'LEFT' && pos.x > window.innerWidth / 2 - 2) return;
     if (side === 'RIGHT' && pos.x < window.innerWidth / 2 + 2) return;
 
@@ -188,22 +211,22 @@ const App: React.FC = () => {
   if (!side) {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-slate-950 px-4 overflow-y-auto">
-        <div className="max-w-4xl w-full glass p-8 md:p-12 rounded-3xl text-center space-y-8 animate-in fade-in zoom-in duration-500 my-8">
+        <div className="max-w-4xl w-full glass p-6 md:p-12 rounded-3xl text-center space-y-6 md:space-y-8 animate-in fade-in zoom-in duration-500 my-8">
           <div className="space-y-2">
-            <h1 className="text-5xl md:text-7xl font-orbitron font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-white to-slate-500">
+            <h1 className="text-4xl md:text-7xl font-orbitron font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-white to-slate-500">
               PIXEL DEBATE
             </h1>
-            <p className="text-slate-400 text-lg md:text-xl font-light">
+            <p className="text-slate-400 text-base md:text-xl font-light">
               Collaborative visual discourse. Choose your camp.
             </p>
           </div>
           
-          <div className="glass p-6 rounded-2xl border-purple-500/20 bg-purple-500/5 space-y-4">
+          <div className="glass p-4 md:p-6 rounded-2xl border-purple-500/20 bg-purple-500/5 space-y-4">
             <div className="flex justify-between items-center px-2">
-              <span className="text-purple-400 font-orbitron text-xs font-bold tracking-widest">DEBATE THEME</span>
+              <span className="text-purple-400 font-orbitron text-[10px] md:text-xs font-bold tracking-widest">DEBATE THEME</span>
               <button 
                 onClick={() => setIsEditingTopic(!isEditingTopic)}
-                className="text-slate-400 hover:text-white transition-colors flex items-center gap-2 text-sm"
+                className="text-slate-400 hover:text-white transition-colors flex items-center gap-2 text-xs md:text-sm"
               >
                 <i className={`fa-solid ${isEditingTopic ? 'fa-check' : 'fa-pen-to-square'}`}></i>
                 {isEditingTopic ? 'Done' : 'Customize'}
@@ -211,15 +234,14 @@ const App: React.FC = () => {
             </div>
 
             {isEditingTopic ? (
-              <div className="grid md:grid-cols-2 gap-4 animate-in fade-in duration-300">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in duration-300">
                 <div className="text-left space-y-1">
                   <label className="text-[10px] text-slate-500 font-bold uppercase ml-1">Left Topic</label>
                   <input 
                     type="text" 
                     value={session.topicA}
                     onChange={(e) => updateSession({ topicA: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-rose-500 outline-none transition-all"
-                    placeholder="e.g. AI is helpful"
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm md:text-base text-white focus:border-rose-500 outline-none transition-all"
                   />
                 </div>
                 <div className="text-left space-y-1">
@@ -228,8 +250,7 @@ const App: React.FC = () => {
                     type="text" 
                     value={session.topicB}
                     onChange={(e) => updateSession({ topicB: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-sky-500 outline-none transition-all"
-                    placeholder="e.g. AI is scary"
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm md:text-base text-white focus:border-sky-500 outline-none transition-all"
                   />
                 </div>
                 <div className="md:col-span-2 flex flex-wrap gap-2 justify-center pt-2">
@@ -237,7 +258,7 @@ const App: React.FC = () => {
                     <button 
                       key={i}
                       onClick={() => updateSession({ topicA: t.a, topicB: t.b })}
-                      className="px-3 py-1 bg-slate-800 hover:bg-slate-700 rounded-full text-[10px] font-bold text-slate-400 hover:text-white transition-all uppercase tracking-tighter"
+                      className="px-2 py-1 bg-slate-800 hover:bg-slate-700 rounded-full text-[9px] md:text-[10px] font-bold text-slate-400 hover:text-white transition-all uppercase"
                     >
                       {t.a} vs {t.b}
                     </button>
@@ -245,38 +266,38 @@ const App: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col md:flex-row items-center justify-center gap-4 py-2">
-                <span className="text-2xl font-bold text-rose-400">{session.topicA}</span>
-                <span className="text-slate-600 font-orbitron italic">vs</span>
-                <span className="text-2xl font-bold text-sky-400">{session.topicB}</span>
+              <div className="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4 py-2 text-center">
+                <span className="text-xl md:text-2xl font-bold text-rose-400 break-words">{session.topicA}</span>
+                <span className="text-slate-600 font-orbitron italic text-sm md:text-base">vs</span>
+                <span className="text-xl md:text-2xl font-bold text-sky-400 break-words">{session.topicB}</span>
               </div>
             )}
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8 pt-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 pt-4">
             <button 
               onClick={() => { setSide('LEFT'); setColor('#f43f5e'); }}
-              className="group p-8 rounded-2xl border-2 border-rose-500/20 hover:border-rose-500 bg-rose-500/5 hover:bg-rose-500/10 transition-all text-left space-y-4"
+              className="group p-6 md:p-8 rounded-2xl border-2 border-rose-500/20 hover:border-rose-500 bg-rose-500/5 hover:bg-rose-500/10 transition-all text-left space-y-3 md:space-y-4"
             >
-              <div className="w-12 h-12 rounded-lg bg-rose-500 flex items-center justify-center text-white text-2xl group-hover:scale-110 transition-transform">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-rose-500 flex items-center justify-center text-white text-xl md:text-2xl group-hover:scale-110 transition-transform">
                 <i className="fa-solid fa-fire"></i>
               </div>
               <div>
-                <h3 className="text-2xl font-bold text-rose-400">JOIN SIDE A</h3>
-                <p className="text-slate-300 text-sm opacity-80 uppercase tracking-widest font-orbitron">Draw for the left</p>
+                <h3 className="text-xl md:text-2xl font-bold text-rose-400 uppercase tracking-tight">JOIN SIDE A</h3>
+                <p className="text-slate-300 text-[10px] md:text-sm opacity-80 uppercase tracking-widest font-orbitron">Draw for the left</p>
               </div>
             </button>
 
             <button 
               onClick={() => { setSide('RIGHT'); setColor('#0ea5e9'); }}
-              className="group p-8 rounded-2xl border-2 border-sky-500/20 hover:border-sky-500 bg-sky-500/5 hover:bg-sky-500/10 transition-all text-left space-y-4"
+              className="group p-6 md:p-8 rounded-2xl border-2 border-sky-500/20 hover:border-sky-500 bg-sky-500/5 hover:bg-sky-500/10 transition-all text-left space-y-3 md:space-y-4"
             >
-              <div className="w-12 h-12 rounded-lg bg-sky-500 flex items-center justify-center text-white text-2xl group-hover:scale-110 transition-transform">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-sky-500 flex items-center justify-center text-white text-xl md:text-2xl group-hover:scale-110 transition-transform">
                 <i className="fa-solid fa-shield"></i>
               </div>
               <div>
-                <h3 className="text-2xl font-bold text-sky-400">JOIN SIDE B</h3>
-                <p className="text-slate-300 text-sm opacity-80 uppercase tracking-widest font-orbitron">Draw for the right</p>
+                <h3 className="text-xl md:text-2xl font-bold text-sky-400 uppercase tracking-tight">JOIN SIDE B</h3>
+                <p className="text-slate-300 text-[10px] md:text-sm opacity-80 uppercase tracking-widest font-orbitron">Draw for the right</p>
               </div>
             </button>
           </div>
@@ -287,15 +308,14 @@ const App: React.FC = () => {
 
   return (
     <div className="relative w-screen h-screen overflow-hidden cursor-crosshair">
-      {/* Background info */}
-      <div className="absolute top-0 w-full flex justify-between px-10 py-6 pointer-events-none z-10">
-        <div className="flex flex-col">
-          <span className="text-rose-500 font-orbitron font-bold tracking-widest text-[10px] md:text-sm opacity-60">OPINION ALPHA</span>
-          <h2 className="text-xl md:text-2xl font-bold text-white uppercase max-w-[40vw] truncate">{session.topicA}</h2>
+      <div className="absolute top-0 w-full flex justify-between px-4 md:px-10 py-4 md:py-6 pointer-events-none z-10 bg-gradient-to-b from-slate-950/50 to-transparent">
+        <div className="flex flex-col max-w-[45%]">
+          <span className="text-rose-500 font-orbitron font-bold tracking-widest text-[8px] md:text-sm opacity-80">ALPHA</span>
+          <h2 className="text-xs md:text-2xl font-bold text-white uppercase truncate">{session.topicA}</h2>
         </div>
-        <div className="flex flex-col text-right">
-          <span className="text-sky-500 font-orbitron font-bold tracking-widest text-[10px] md:text-sm opacity-60">OPINION BETA</span>
-          <h2 className="text-xl md:text-2xl font-bold text-white uppercase max-w-[40vw] truncate">{session.topicB}</h2>
+        <div className="flex flex-col text-right max-w-[45%]">
+          <span className="text-sky-500 font-orbitron font-bold tracking-widest text-[8px] md:text-sm opacity-80">BETA</span>
+          <h2 className="text-xs md:text-2xl font-bold text-white uppercase truncate">{session.topicB}</h2>
         </div>
       </div>
 
@@ -322,10 +342,9 @@ const App: React.FC = () => {
         isAnalyzing={isAnalyzing}
       />
 
-      {/* Analysis Modal */}
       {analysisResult && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
-          <div className="glass max-w-2xl w-full max-h-[80vh] overflow-y-auto rounded-3xl p-6 md:p-10 relative animate-in slide-in-from-bottom-10 duration-500">
+          <div className="glass max-w-2xl w-full max-h-[85vh] overflow-y-auto rounded-3xl p-6 md:p-10 relative animate-in slide-in-from-bottom-10 duration-500">
             <button 
               onClick={() => setAnalysisResult(null)}
               className="absolute top-6 right-6 text-slate-400 hover:text-white transition-colors"
@@ -333,26 +352,26 @@ const App: React.FC = () => {
               <i className="fa-solid fa-xmark text-2xl"></i>
             </button>
             <div className="space-y-6">
-              <div className="flex items-center gap-3 text-purple-400 font-orbitron font-bold tracking-tighter text-xl">
+              <div className="flex items-center gap-3 text-purple-400 font-orbitron font-bold tracking-tighter text-lg md:text-xl">
                 <i className="fa-solid fa-brain"></i>
-                GEMINI SOCIOLOGICAL SYNTHESIS
+                SYNTHESIS
               </div>
-              <div className="prose prose-invert prose-slate max-w-none text-slate-300">
+              <div className="prose prose-sm md:prose-base prose-invert prose-slate max-w-none text-slate-300">
                  {analysisResult.split('\n').map((line, i) => {
                    if (line.trim() === '') return <br key={i} />;
                    const isHeader = line.startsWith('#');
                    return (
-                     <p key={i} className={isHeader ? 'text-white font-bold text-xl mt-6 first:mt-0' : 'mb-2'}>
+                     <p key={i} className={isHeader ? 'text-white font-bold text-lg md:text-xl mt-6 first:mt-0' : 'mb-2'}>
                        {line.replace(/^#+\s/, '')}
                      </p>
                    );
                  })}
               </div>
             </div>
-            <div className="mt-10 flex justify-center">
+            <div className="mt-8 md:mt-10 flex justify-center">
               <button 
                 onClick={() => setAnalysisResult(null)}
-                className="px-8 py-3 bg-white text-black font-bold rounded-xl hover:bg-slate-200 transition-colors"
+                className="w-full md:w-auto px-8 py-3 bg-white text-black font-bold rounded-xl hover:bg-slate-200 transition-colors"
               >
                 BACK TO CANVAS
               </button>
@@ -361,8 +380,7 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* Side HUD */}
-      <div className={`fixed top-1/2 -translate-y-1/2 p-4 glass rounded-r-2xl border-l-4 ${side === 'LEFT' ? 'border-rose-500' : 'border-sky-500'}`}>
+      <div className={`hidden md:flex fixed top-1/2 -translate-y-1/2 p-4 glass rounded-r-2xl border-l-4 ${side === 'LEFT' ? 'border-rose-500' : 'border-sky-500'}`}>
         <div className="flex flex-col items-center gap-2">
            <i className={`fa-solid ${side === 'LEFT' ? 'fa-fire text-rose-500' : 'fa-shield text-sky-500'} text-xl`}></i>
            <div className="h-20 w-1 bg-slate-800 rounded-full overflow-hidden">
@@ -373,10 +391,10 @@ const App: React.FC = () => {
 
       <button 
         onClick={() => setSide(null)}
-        className="fixed top-6 left-1/2 -translate-x-1/2 glass px-4 py-2 rounded-full text-xs font-bold text-slate-400 hover:text-white transition-all z-20 flex items-center gap-2"
+        className="fixed top-6 left-1/2 -translate-x-1/2 glass px-3 py-1.5 md:px-4 md:py-2 rounded-full text-[10px] md:text-xs font-bold text-slate-400 hover:text-white transition-all z-20 flex items-center gap-2"
       >
         <i className="fa-solid fa-arrow-left"></i>
-        RESELECT SIDE
+        RESELECT
       </button>
     </div>
   );
