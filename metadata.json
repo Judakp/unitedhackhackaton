@@ -1,0 +1,5 @@
+{
+  "name": "PixelDebate",
+  "description": "A collaborative split-canvas visual debate platform where users express opinions through drawing, analyzed by Gemini AI for sociological insights.",
+  "requestFramePermissions": []
+}
