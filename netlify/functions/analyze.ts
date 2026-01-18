@@ -11,7 +11,7 @@ export const handler: Handler = async (event) => {
 
   try {
     const { base64Image, topicA, topicB } = JSON.parse(event.body || "");
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
     const prompt = `
       You are a sociological AI expert analyzing a visual debate canvas called 'PixelDebate'.
