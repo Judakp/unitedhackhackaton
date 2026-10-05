@@ -192,11 +192,15 @@ const App: React.FC = () => {
     setIsAnalyzing(true);
     try {
       const dataUrl = canvas.toDataURL('image/png');
-      const result = await analyzeCanvas(dataUrl, session.topicA, session.topicB);
-      setAnalysisResult(result);
+      const result = await analyzeCanvas(
+        dataUrl,
+        session.topicA,
+        session.topicB
+      );
+      setAnalysisResult(result.text);
     } catch (err) {
       console.error(err);
-      alert("Analysis failed. Ensure Gemini API key is active.");
+      alert(err instanceof Error ? err.message : "Analysis failed.");
     } finally {
       setIsAnalyzing(false);
     }
